@@ -1806,7 +1806,6 @@
 
     <!-- ===== PRESERVED BACKEND JAVASCRIPT (UNCHANGED) ===== -->
     <script>
-    // === SUPERMANUS ENHANCED 106 MB BACKEND API CONFIGURATION ===
     const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://web-production-2474.up.railway.app';
 
     const HUMAN_SIMULATOR_PERSONALITIES = {
@@ -1914,6 +1913,20 @@
             console.error('❌ Error sending message:', error);
         }
     }
+
+    // ✅ BUTTON HANDLER FOR HUMAN SIMULATOR
+    document.getElementById('send-human-message').addEventListener('click', async () => {
+        const message = document.getElementById('human-input').value.trim();
+        const agent = 'gpt4o'; // Change to another agent if needed
+
+        if (!message) {
+            alert('Please enter a message.');
+            return;
+        }
+
+        const response = await sendMessageToAgent(message, agent);
+        console.log('Agent said:', response);
+    });
 </script>
 
         // ======= HUMAN SIMULATOR BEHAVIORAL PATTERNS =======
