@@ -418,6 +418,95 @@ def consume_user_credits(user_id, amount):
         logger.error(f"Consume credits error: {str(e)}")
         return False, 0, 0
 
+def get_or_create_user(user_id):
+    """Get or create user in database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            cursor.execute(
+                'INSERT INTO users (id, credits, daily_credits) VALUES (?, ?, ?)',
+                (user_id, 100, 100)
+            )
+            conn.commit()
+            cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+            user = cursor.fetchone()
+            
+        conn.close()
+        
+        # Return a user object-like structure
+        class User:
+            def __init__(self, data):
+                self.id = data[0]
+                self.email = data[1] if len(data) > 1 else None
+                self.plan = data[2] if len(data) > 2 else 'free'
+                self.credits = data[3] if len(data) > 3 else 100
+                
+        return User(user)
+        
+    except Exception as e:
+        logger.error(f"Get/create user error: {str(e)}")
+        # Return default user
+        class User:
+            def __init__(self):
+                self.id = user_id
+                self.credits = 100
+                self.plan = 'free'
+        return User()
+
+def save_message(session_id, user_id, agent_id, message, reply):
+    """Save conversation message to database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Create conversations table if not exists
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT PRIMARY KEY,
+                session_id TEXT,
+                user_id TEXT,
+                agent_id TEXT,
+                user_message TEXT,
+                agent_reply TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Insert conversation
+        conversation_id = str(uuid.uuid4())
+        cursor.execute(
+            'INSERT INTO conversations (id, session_id, user_id, agent_id, user_message, agent_reply) VALUES (?, ?, ?, ?, ?, ?)',
+            (conversation_id, session_id, user_id, agent_id, message, reply)
+        )
+        
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        logger.error(f"Save message error: {str(e)}")
+
+def deduct_credits(user_id, amount):
+    """Deduct credits from user account"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            'UPDATE users SET credits = credits - ?, daily_credits = daily_credits - ? WHERE id = ?',
+            (amount, amount, user_id)
+        )
+        
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        logger.error(f"Deduct credits error: {str(e)}")
+
 
 # 🌟 HEALTH CHECK ENDPOINT
 @app.route('/api/health', methods=['GET'])
