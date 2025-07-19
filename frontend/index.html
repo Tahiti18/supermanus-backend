@@ -1806,95 +1806,115 @@
 
     <!-- ===== PRESERVED BACKEND JAVASCRIPT (UNCHANGED) ===== -->
     <script>
-        // ======= FIXED BACKEND CONFIGURATI        // 🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND API CONFIGURATION
-        // Update this URL after Railway deployment
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://web-production-2474.up.railway.app';        // 🎭 ENHANCED HUMAN SIMULATOR CONFIGURATION
-        const HUMAN_SIMULATOR_PERSONALITIES = {
-            'analytical': 'Analytical Professional - Detail-oriented, data-driven approach',
-            'creative': 'Creative Innovator - Imaginative, out-of-the-box thinking',
-            'strategic': 'Strategic Leader - Big-picture thinking, long-term planning',
-            'practical': 'Practical Problem-Solver - Hands-on, implementation-focused',
-            'researcher': 'Curious Researcher - Inquisitive, thorough investigation',
-            'consultant': 'Expert Consultant - Professional advice, best practices'
-        };
+    // === SUPERMANUS ENHANCED 106 MB BACKEND API CONFIGURATION ===
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://web-production-2474.up.railway.app';
 
-        const HUMAN_SIMULATOR_STRATEGIES = {
-            'balanced': 'Balanced approach using all agents equally',
-            'focused': 'Focused on personality-preferred agents',
-            'adaptive': 'Adaptive based on conversation flow',
-            'intensive': 'Intensive using high-capability agents'
-        };
+    const HUMAN_SIMULATOR_PERSONALITIES = {
+        'analytical': 'Analytical Professional - Detail-oriented, data-driven approach',
+        'creative': 'Creative Innovator - Imaginative, out-of-the-box thinking',
+        'strategic': 'Strategic Leader - Big-picture thinking, long-term planning',
+        'practical': 'Practical Problem-Solver - Hands-on, implementation-focused',
+        'researcher': 'Curious Researcher - Inquisitive, thorough investigation',
+        'consultant': 'Expert Consultant - Professional advice, best practices'
+    };
 
-        // 💰 ENHANCED PAYMENT PLANS
-        const PAYMENT_PLANS = {
-            'free': { name: 'Free Tier', price: '$0', credits: 100, human_simulator: false, max_rounds: 5 },
-            'basic': { name: 'Basic Plan', price: '$19', credits: 5000, human_simulator: true, max_rounds: 15 },
-            'professional': { name: 'Professional Plan', price: '$99', credits: 25000, human_simulator: true, max_rounds: 30 },
-            'expert': { name: 'Expert Plan', price: '$499', credits: 150000, human_simulator: true, max_rounds: 50 }
-        };
+    const HUMAN_SIMULATOR_STRATEGIES = {
+        'balanced': 'Balanced approach using all agents equally',
+        'focused': 'Focused on personality-preferred agents',
+        'adaptive': 'Adaptive based on conversation flow',
+        'intensive': 'Intensive using high-capability agents'
+    };
 
-        // 🔧 ENHANCED USER STATE
-        let userPlan = 'free';
-        let userCredits = 100;
-        let dailyCredits = 100;
-        let humanSimulatorEnabled = false;
-        let sessionActive = false;
-        let currentMode = 'manual';
-        let selectedAdvisorMode = null;
+    const PAYMENT_PLANS = {
+        'free': { name: 'Free Tier', price: '$0', credits: 100, human_simulator: false, max_rounds: 5 },
+        'basic': { name: 'Basic Plan', price: '$19', credits: 5000, human_simulator: true, max_rounds: 15 },
+        'professional': { name: 'Professional Plan', price: '$99', credits: 25000, human_simulator: true, max_rounds: 30 },
+        'expert': { name: 'Expert Plan', price: '$499', credits: 150000, human_simulator: true, max_rounds: 50 }
+    };
 
-        // ======= 10-AGENT CONFIGURATION =======
-const AGENT_CONFIG = {
-    "gpt4o": {
-        name: "GPT-4o",
-        endpoint: "api/chat",
-        model: "openai/gpt-4o"
-    },
-    "chatgpt": {
-        name: "ChatGPT 4 Turbo",
-        endpoint: "api/chat",
-        model: "openai/gpt-4-turbo"
-    },
-    "deepseek": {
-        name: "DeepSeek R1",
-        endpoint: "api/chat",
-        model: "deepseek/deepseek-r1"
-    },
-    "llama": {
-        name: "Meta Llama 3.3",
-        endpoint: "api/chat",
-        model: "meta-llama/llama-3-3-70b-instruct"
-    },
-    "mistral": {
-        name: "Mistral Large",
-        endpoint: "api/chat",
-        model: "mistralai/mistral-large-2407"
-    },
-    "gemini2": {
-        name: "Gemini 2.0 Flash",
-        endpoint: "api/chat",
-        model: "google/gemini-2.0-flash-exp"
-    },
-    "perplexity": {
-        name: "Perplexity Pro",
-        endpoint: "api/chat",
-        model: "perplexity/llama-3.1-sonar-huge-128k-online"
-    },
-    "gemini15": {
-        name: "Gemini Pro 1.5",
-        endpoint: "api/chat",
-        model: "google/gemini-pro-1.5"
-    },
-    "commandr": {
-        name: "Command R+",
-        endpoint: "api/chat",
-        model: "cohere/command-r-plus"
-    },
-    "qwen": {
-        name: "Qwen 2.5 72B",
-        endpoint: "api/chat",
-        model: "qwen/qwen-2.5-72b-instruct"
+    let userPlan = 'free';
+    let userCredits = 100;
+    let dailyCredits = 100;
+    let humanSimulatorEnabled = false;
+    let sessionActive = false;
+    let currentMode = 'manual';
+    let selectedAdvisorMode = null;
+
+    const AGENT_CONFIG = {
+        "gpt4o": {
+            name: "GPT-4o",
+            endpoint: "api/chat",
+            model: "openai/gpt-4o"
+        },
+        "chatgpt": {
+            name: "ChatGPT 4 Turbo",
+            endpoint: "api/chat",
+            model: "openai/gpt-4-turbo"
+        },
+        "deepseek": {
+            name: "DeepSeek R1",
+            endpoint: "api/chat",
+            model: "deepseek/deepseek-r1"
+        },
+        "llama": {
+            name: "Meta Llama 3.3",
+            endpoint: "api/chat",
+            model: "meta-llama/llama-3-3-70b-instruct"
+        },
+        "mistral": {
+            name: "Mistral Large",
+            endpoint: "api/chat",
+            model: "mistralai/mistral-large-2407"
+        },
+        "gemini2": {
+            name: "Gemini 2.0 Flash",
+            endpoint: "api/chat",
+            model: "google/gemini-2.0-flash-exp"
+        },
+        "perplexity": {
+            name: "Perplexity Pro",
+            endpoint: "api/chat",
+            model: "perplexity/llama-3.1-sonar-huge-128k-online"
+        },
+        "gemini15": {
+            name: "Gemini Pro 1.5",
+            endpoint: "api/chat",
+            model: "google/gemini-pro-1.5"
+        },
+        "commandr": {
+            name: "Command R+",
+            endpoint: "api/chat",
+            model: "cohere/command-r-plus"
+        },
+        "qwen": {
+            name: "Qwen 2.5 72B",
+            endpoint: "api/chat",
+            model: "qwen/qwen-2.5-72b-instruct"
+        }
+    };
+
+    // ✅ FETCH FUNCTION TO SEND MESSAGES TO BACKEND
+    async function sendMessageToAgent(message, agent) {
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    agent: agent
+                })
+            });
+
+            const data = await response.json();
+            console.log('✅ Agent response:', data);
+            return data;
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+        }
     }
-};
+</script>
 
         // ======= HUMAN SIMULATOR BEHAVIORAL PATTERNS =======
         const HUMAN_SIMULATOR_PATTERNS = {
