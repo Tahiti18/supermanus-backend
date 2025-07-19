@@ -4,12 +4,3 @@ requests==2.31.0
 stripe==7.8.0
 gunicorn==21.2.0
 python-dotenv==1.0.0
-uuid
-datetime
-threading
-logging
-json
-time
-random
-os
-
