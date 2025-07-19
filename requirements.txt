@@ -1,0 +1,16 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+requests==2.31.0
+stripe==7.8.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+sqlite3
+uuid
+datetime
+threading
+logging
+json
+time
+random
+os
+
