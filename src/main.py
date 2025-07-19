@@ -459,104 +459,63 @@ def chat_with_agent():
         message = data.get('message')
         session_id = data.get('session_id', 'anonymous')
         user_id = data.get('user_id', session_id)
-        
+
         if not agent_id or agent_id not in AGENT_MODELS:
             return jsonify({
-                "error": f"Agent {agent_id} not configured",
+                "error": f"Agent '{agent_id}' not configured.",
                 "available_agents": list(AGENT_MODELS.keys())
             }), 400
-            
+
         if not message or not message.strip():
+            return jsonify({ "error": "Message cannot be empty." }), 400
+
+        # Retrieve or initialize user
+        user = get_or_create_user(user_id)
+        if user.credits < 1:
+            return jsonify({ "error": "Insufficient credits." }), 402
+
+        # Forward request to OpenRouter agent
+        agent = AGENT_MODELS[agent_id]
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://promptlink.org",
+            "X-Title": "PromptLink"
+        }
+
+        body = {
+            "model": agent["model"],
+            "messages": [{"role": "user", "content": message}]
+        }
+
+        openrouter_response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=body,
+            timeout=30
+        )
+
+        if openrouter_response.status_code != 200:
             return jsonify({
-                "error": "Message cannot be empty"
-            }), 400
-        
-        # Check and consume credits
-        agent_info = AGENT_MODELS[agent_id]
-        credit_cost = max(1, int(len(message) / 100))  # 1 credit per 100 chars
-        
-        success, remaining_credits, daily_credits = consume_user_credits(user_id, credit_cost)
-        
-        if not success:
-            return jsonify({
-                "error": "Insufficient credits",
-                "credits_needed": credit_cost,
-                "daily_credits_remaining": daily_credits,
-                "message": "Upgrade your plan for more credits"
-            }), 402
-            
-        model = agent_info['model']
-        
-        # 🔥 REAL API CALL TO OPENROUTER
-        messages = [
-            {
-                "role": "system",
-                "content": f"You are {agent_info['name']}, {agent_info['description']}. Provide genuine, thoughtful responses."
-            },
-            {
-                "role": "user", 
-                "content": message
-            }
-        ]
-        
-        api_result = call_openrouter_api(model, messages, agent_info.get('max_tokens', 1000))
-        
-        if api_result and 'choices' in api_result:
-            # ✅ REAL API SUCCESS
-            ai_response = api_result['choices'][0]['message']['content'].strip()
-            
-            # Log the conversation
-            try:
-                conn = sqlite3.connect(DATABASE_PATH)
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO sessions (id, user_id, mode, agent_a, conversation) VALUES (?, ?, ?, ?, ?)',
-                    (str(uuid.uuid4()), user_id, 'single_agent', agent_id, json.dumps([{"user": message, "agent": ai_response}]))
-                )
-                conn.commit()
-                conn.close()
-            except Exception as e:
-                logger.warning(f"Failed to log conversation: {str(e)}")
-            
-            return jsonify({
-                "status": "success",
-                "response": ai_response,
-                "agent": agent_id,
-                "agent_name": agent_info['name'],
-                "model": model,
-                "session_id": session_id,
-                "credits_consumed": credit_cost,
-                "credits_remaining": remaining_credits,
-                "daily_credits_remaining": daily_credits,
-                "real_api": True,
-                "demo_mode": False,
-                "timestamp": time.time()
-            })
-        else:
-            # 🔧 DEMO MODE FALLBACK
-            demo_response = generate_enhanced_demo_response(agent_id, message)
-            return jsonify({
-                "status": "demo",
-                "response": demo_response,
-                "agent": agent_id,
-                "agent_name": agent_info['name'],
-                "model": model,
-                "session_id": session_id,
-                "credits_consumed": credit_cost,
-                "credits_remaining": remaining_credits,
-                "daily_credits_remaining": daily_credits,
-                "real_api": False,
-                "demo_mode": True,
-                "note": "Configure OPENROUTER_API_KEY environment variable for real AI responses",
-                "timestamp": time.time()
-            })
-            
-    except Exception as e:
-        logger.error(f"Chat error: {str(e)}")
+                "error": "OpenRouter error",
+                "details": openrouter_response.text
+            }), 502
+
+        completion = openrouter_response.json()
+        reply = completion["choices"][0]["message"]["content"]
+
+        # Save message to DB and deduct credit
+        save_message(session_id, user_id, agent_id, message, reply)
+        deduct_credits(user_id, 1)
+
         return jsonify({
-            "error": f"Chat error: {str(e)}",
-            "agent": agent_id if 'agent_id' in locals() else None
-        }), 500
+            "agent": agent_id,
+            "model": agent["model"],
+            "reply": reply,
+            "remaining_credits": user.credits - 1
+        })
+
+    except Exception as e:
+        return jsonify({ "error": "Server error", "details": str(e) }), 500
 
 # 📋 ENHANCED AGENTS LIST ENDPOINT
 @app.route('/api/agents/list', methods=['GET'])
