@@ -3185,7 +3185,7 @@ Total messages: ${messageCount}
         
         async function updateCreditsDisplay() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/user/credits`, {
+                const response = await fetch(`${API_BASE_URL}/api/user/status`, {
                     headers: {
                         'X-User-ID': 'demo_user'
                     }
