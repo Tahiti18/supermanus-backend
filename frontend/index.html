@@ -1894,25 +1894,45 @@
 
     // ✅ FETCH FUNCTION TO SEND MESSAGES TO BACKEND
     async function sendMessageToAgent(message, agent) {
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: message,
-                    agent: agent
-                })
-            });
+    try {
+        // Add debugging
+        console.log('Sending to agent:', agent, 'message:', message);
+        
+        const payload = {
+            message: message,
+            agent: agent,
+            session_id: currentSession || generateUUID(),
+            user_id: getCurrentUserId()
+        };
+        
+        console.log('Payload being sent:', payload);
+        
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
 
-            const data = await response.json();
-            console.log('✅ Agent response:', data);
-            return data;
-        } catch (error) {
-            console.error('❌ Error sending message:', error);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('HTTP Error:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
+
+        const data = await response.json();
+        console.log('Agent response:', data);
+        return data;
+    } catch (error) {
+        console.error('Error sending message:', error);
+        return { error: `Failed to send message: ${error.message}` };
     }
+}
+
 
     // ✅ BUTTON HANDLER FOR HUMAN SIMULATOR
     document.getElementById('send-human-message').addEventListener('click', async () => {
@@ -1927,7 +1947,33 @@
         const response = await sendMessageToAgent(message, agent);
         console.log('Agent said:', response);
     });
-</script>
+        
+// Helper functions for PromptLink
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+function getCurrentUserId() {
+    let userId = localStorage.getItem('promptlink_user_id');
+    if (!userId) {
+        userId = generateUUID();
+        localStorage.setItem('promptlink_user_id', userId);
+    }
+    return userId;
+}
+
+// Initialize session
+let currentSession = generateUUID();
+
+// Add error handling to existing event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('PromptLink initialized');
+    console.log('User ID:', getCurrentUserId());
+    console.log('Session ID:', currentSession);
+});
 
         // ======= HUMAN SIMULATOR BEHAVIORAL PATTERNS =======
         const HUMAN_SIMULATOR_PATTERNS = {
@@ -2422,58 +2468,73 @@
 
         // ======= PROCESS AGENT MESSAGE (UNCHANGED) =======
         async function processAgentMessage(agentId, message, agentLetter) {
-            try {
-                updateAgentStatus(agentLetter, 'working');
-                const agentConfig = AGENT_CONFIG[agentId];
-                
-                if (!agentConfig) {
-                    throw new Error(`Agent configuration not found for: ${agentId}`);
-                }
-                
-                const payload = {
-                    message: message,
-                    agents: [agentId],
-                    session_id: currentSession,
-                    mode: selectedAdvisorMode || 'general'
-                };
-                
-                const response = await fetch(`${API_BASE_URL}/api/chat`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                let responseText;
-                if (response.ok) {
-                    const data = await response.json();
-                    responseText = extractResponseText(data);
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                updateAgentResponse(agentLetter, responseText);
-                addMessageToConversation('agent', `Agent ${agentLetter.toUpperCase()} (${agentConfig.name})`, responseText);
-                updateAgentStatus(agentLetter, 'ready');
-                
-                messageCount++;
-                if (messageCount % 2 === 0) {
-                    roundCount++;
-                }
-                updateDiagnostics();
-                
-                return responseText;
-            } catch (error) {
-                console.error(`Agent ${agentLetter} error:`, error);
-                const errorMsg = `Error: ${error.message}`;
-                updateAgentResponse(agentLetter, errorMsg);
-                addMessageToConversation('system', `Agent ${agentLetter.toUpperCase()} Error`, errorMsg);
-                updateAgentStatus(agentLetter, 'error');
-                throw error;
-            }
+    try {
+        updateAgentStatus(agentLetter, 'working');
+        const agentConfig = AGENT_CONFIG[agentId];
+        
+        if (!agentConfig) {
+            throw new Error(`Agent configuration not found for: ${agentId}`);
         }
+        
+        // FIXED: Changed payload format to match backend expectations
+        const payload = {
+            message: message,
+            agent: agentId,  // Changed from 'agents: [agentId]' to 'agent: agentId'
+            session_id: currentSession || generateUUID(),
+            user_id: getCurrentUserId()  // Added missing user_id
+        };
+        
+        console.log('Sending payload to agent:', payload); // Added debugging
+        
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        console.log('Response status:', response.status); // Added debugging
+
+        let responseText;
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Response data:', data); // Added debugging
+            
+            // FIXED: Handle different response formats from backend
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            responseText = data.reply || data.response || extractResponseText(data);
+        } else {
+            const errorText = await response.text();
+            console.error('HTTP Error Response:', errorText); // Added debugging
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        updateAgentResponse(agentLetter, responseText);
+        addMessageToConversation('agent', `Agent ${agentLetter.toUpperCase()} (${agentConfig.name})`, responseText);
+        updateAgentStatus(agentLetter, 'ready');
+        
+        messageCount++;
+        if (messageCount % 2 === 0) {
+            roundCount++;
+        }
+        updateDiagnostics();
+        
+        return responseText;
+    } catch (error) {
+        console.error(`Agent ${agentLetter} error:`, error);
+        const errorMsg = `Error: ${error.message}`;
+        updateAgentResponse(agentLetter, errorMsg);
+        addMessageToConversation('system', `Agent ${agentLetter.toUpperCase()} Error`, errorMsg);
+        updateAgentStatus(agentLetter, 'error');
+        throw error;
+    }
+}
+
 
         // ======= MESSAGE EXTRACTION (UNCHANGED) =======
         function extractResponseText(data) {
@@ -3294,7 +3355,7 @@ Total messages: ${messageCount}
         document.addEventListener('DOMContentLoaded', function() {
             updateCreditsDisplay();
         });
-    </script>
+    >
 
     <!-- ===== PAYMENT MODALS ===== -->
     
