@@ -1,6 +1,6 @@
-c<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
+9<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PromptLink - AI Collaboration on Autopilot</title>
@@ -1287,6 +1287,7 @@ c<!DOCTYPE html>
                     <select id="agent-a-select" class="form-select">
                     <option value="">Select Agent A...</option>
                     <option value="gpt4o">GPT-4o</option>
+                    <option value="chatgpt">ChatGPT 4 Turbo</option>
                     <option value="deepseek">DeepSeek R1</option>
                     <option value="llama">Meta Llama 3.3</option>
                     <option value="mistral">Mistral Large</option>
@@ -1361,6 +1362,7 @@ c<!DOCTYPE html>
                     <select id="agent-b-select" class="form-select">
                     <option value="">Select Agent B...</option>
                     <option value="gpt4o">GPT-4o</option>
+                    <option value="chatgpt">ChatGPT 4 Turbo</option>
                     <option value="deepseek">DeepSeek R1</option>
                     <option value="llama">Meta Llama 3.3</option>
                     <option value="mistral">Mistral Large</option>
@@ -1542,17 +1544,12 @@ c<!DOCTYPE html>
                 </div>
             </div>
             <div class="conversation-area" id="live-conversation">
-    <div class="empty-state">
-        <i class="fas fa-comments"></i>
-        <h3>No conversation yet</h3>
-        <p>Select agents and start a session to begin! All agent responses and conversations will appear here in real-time.</p>
-    </div>
-</div>
-
-<div id="error-display" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin: 16px 0; color: #ef4444; display: none;">
-    <h4 style="margin: 0 0 8px 0;">🚨 Error Details:</h4>
-    <div id="error-message" style="font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; white-space: pre-wrap;"></div>
-</div>
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <h3>No conversation yet</h3>
+                    <p>Select agents and start a session to begin! All agent responses and conversations will appear here in real-time.</p>
+                </div>
+            </div>
         </section>
 
         <section class="card">
@@ -1811,171 +1808,70 @@ c<!DOCTYPE html>
 
     <!-- ===== PRESERVED BACKEND JAVASCRIPT (UNCHANGED) ===== -->
     <script>
-    const API_BASE_URL = 'https://web-production-2816f.up.railway.app';
-        
-    const HUMAN_SIMULATOR_PERSONALITIES = {
-        'analytical': 'Analytical Professional - Detail-oriented, data-driven approach',
-        'creative': 'Creative Innovator - Imaginative, out-of-the-box thinking',
-        'strategic': 'Strategic Leader - Big-picture thinking, long-term planning',
-        'practical': 'Practical Problem-Solver - Hands-on, implementation-focused',
-        'researcher': 'Curious Researcher - Inquisitive, thorough investigation',
-        'consultant': 'Expert Consultant - Professional advice, best practices'
-    };
+        // ======= FIXED BACKEND CONFIGURATION (UNCHANGED) =======
+        const API_BASE_URL = 'https://web-production-2816f.up.railway.app';
 
-    const HUMAN_SIMULATOR_STRATEGIES = {
-        'balanced': 'Balanced approach using all agents equally',
-        'focused': 'Focused on personality-preferred agents',
-        'adaptive': 'Adaptive based on conversation flow',
-        'intensive': 'Intensive using high-capability agents'
-    };
+        let currentSession = null;
+        let sessionStartTime = null;
+        let messageCount = 0;
+        let roundCount = 0;
+        let sessionActive = false;
+        let currentMode = 'manual';
+        let selectedAdvisorMode = null;
 
-    const PAYMENT_PLANS = {
-        'free': { name: 'Free Tier', price: '$0', credits: 100, human_simulator: false, max_rounds: 5 },
-        'basic': { name: 'Basic Plan', price: '$19', credits: 5000, human_simulator: true, max_rounds: 15 },
-        'professional': { name: 'Professional Plan', price: '$99', credits: 25000, human_simulator: true, max_rounds: 30 },
-        'expert': { name: 'Expert Plan', price: '$499', credits: 150000, human_simulator: true, max_rounds: 50 }
-    };
-
-    let userPlan = 'free';
-    let userCredits = 100;
-    let dailyCredits = 100;
-    let humanSimulatorEnabled = false;
-    let sessionActive = false;
-    let currentMode = 'manual';
-    let selectedAdvisorMode = null;
-
-    const AGENT_CONFIG = {
-        "gpt4o": {
-            name: "GPT-4o",
-            endpoint: "api/chat",
-            model: "openai/gpt-4o"
-        },
-        "chatgpt": {
-            name: "ChatGPT 4 Turbo",
-            endpoint: "api/chat",
-            model: "openai/gpt-4-turbo"
-        },
-        "deepseek": {
-            name: "DeepSeek R1",
-            endpoint: "api/chat",
-            model: "deepseek/deepseek-r1"
-        },
-        "llama": {
-            name: "Meta Llama 3.3",
-            endpoint: "api/chat",
-            model: "meta-llama/llama-3-3-70b-instruct"
-        },
-        "mistral": {
-            name: "Mistral Large",
-            endpoint: "api/chat",
-            model: "mistralai/mistral-large-2407"
-        },
-        "gemini2": {
-            name: "Gemini 2.0 Flash",
-            endpoint: "api/chat",
-            model: "google/gemini-2.0-flash-exp"
-        },
-        "perplexity": {
-            name: "Perplexity Pro",
-            endpoint: "api/chat",
-            model: "perplexity/llama-3.1-sonar-huge-128k-online"
-        },
-        "gemini15": {
-            name: "Gemini Pro 1.5",
-            endpoint: "api/chat",
-            model: "google/gemini-pro-1.5"
-        },
-        "commandr": {
-            name: "Command R+",
-            endpoint: "api/chat",
-            model: "cohere/command-r-plus"
-        },
-        "qwen": {
-            name: "Qwen 2.5 72B",
-            endpoint: "api/chat",
-            model: "qwen/qwen-2.5-72b-instruct"
-        }
-    };
-
-    // ✅ FETCH FUNCTION TO SEND MESSAGES TO BACKEND
-    async function sendMessageToAgent(message, agent) {
-    try {
-        const payload = {
-            message: message,
-            agent: agent,
-            session_id: currentSession || generateUUID(),
-            user_id: getCurrentUserId()
-        };
-        
-        // Show what we're sending
-        showError(`DEBUG - Sending:\nURL: ${API_BASE_URL}/api/chat\nPayload: ${JSON.stringify(payload, null, 2)}`);
-        
-        const response = await fetch(`${API_BASE_URL}/api/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        // Show the exact response
-        const responseText = await response.text();
-        showError(`DEBUG - Response:\nStatus: ${response.status}\nBody: ${responseText}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${responseText}`);
-        }
-
-        const data = JSON.parse(responseText);
-        return data;
-    } catch (error) {
-        showError(`ERROR: ${error.message}`);
-        return { error: error.message };
+        // ======= 10-AGENT CONFIGURATION =======
+const AGENT_CONFIG = {
+    "gpt4o": {
+        name: "GPT-4o",
+        endpoint: "api/chat",
+        model: "openai/gpt-4o"
+    },
+    "chatgpt": {
+        name: "ChatGPT 4 Turbo",
+        endpoint: "api/chat",
+        model: "openai/gpt-4-turbo"
+    },
+    "deepseek": {
+        name: "DeepSeek R1",
+        endpoint: "api/chat",
+        model: "deepseek/deepseek-r1"
+    },
+    "llama": {
+        name: "Meta Llama 3.3",
+        endpoint: "api/chat",
+        model: "meta-llama/llama-3-3-70b-instruct"
+    },
+    "mistral": {
+        name: "Mistral Large",
+        endpoint: "api/chat",
+        model: "mistralai/mistral-large-2407"
+    },
+    "gemini2": {
+        name: "Gemini 2.0 Flash",
+        endpoint: "api/chat",
+        model: "google/gemini-2.0-flash-exp"
+    },
+    "perplexity": {
+        name: "Perplexity Pro",
+        endpoint: "api/chat",
+        model: "perplexity/llama-3.1-sonar-huge-128k-online"
+    },
+    "gemini15": {
+        name: "Gemini Pro 1.5",
+        endpoint: "api/chat",
+        model: "google/gemini-pro-1.5"
+    },
+    "commandr": {
+        name: "Command R+",
+        endpoint: "api/chat",
+        model: "cohere/command-r-plus"
+    },
+    "qwen": {
+        name: "Qwen 2.5 72B",
+        endpoint: "api/chat",
+        model: "qwen/qwen-2.5-72b-instruct"
     }
-}
-
-
-    // ✅ BUTTON HANDLER FOR HUMAN SIMULATOR
-    document.getElementById('send-human-message').addEventListener('click', async () => {
-        const message = document.getElementById('human-input').value.trim();
-        const agent = 'gpt4o'; // Change to another agent if needed
-
-        if (!message) {
-            alert('Please enter a message.');
-            return;
-        }
-
-        const response = await sendMessageToAgent(message, agent);
-        console.log('Agent said:', response);
-    });
-        
-// Helper functions for PromptLink
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-function getCurrentUserId() {
-    let userId = localStorage.getItem('promptlink_user_id');
-    if (!userId) {
-        userId = generateUUID();
-        localStorage.setItem('promptlink_user_id', userId);
-    }
-    return userId;
-}
-
-// Initialize session
-let currentSession = generateUUID();
-
-// Add error handling to existing event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('PromptLink initialized');
-    console.log('User ID:', getCurrentUserId());
-    console.log('Session ID:', currentSession);
-});
+};
 
         // ======= HUMAN SIMULATOR BEHAVIORAL PATTERNS =======
         const HUMAN_SIMULATOR_PATTERNS = {
@@ -2470,73 +2366,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // ======= PROCESS AGENT MESSAGE (UNCHANGED) =======
         async function processAgentMessage(agentId, message, agentLetter) {
-    try {
-        updateAgentStatus(agentLetter, 'working');
-        const agentConfig = AGENT_CONFIG[agentId];
-        
-        if (!agentConfig) {
-            throw new Error(`Agent configuration not found for: ${agentId}`);
-        }
-        
-        // FIXED: Changed payload format to match backend expectations
-        const payload = {
-            message: message,
-            agent: agentId,  // Changed from 'agents: [agentId]' to 'agent: agentId'
-            session_id: currentSession || generateUUID(),
-            user_id: getCurrentUserId()  // Added missing user_id
-        };
-        
-        console.log('Sending payload to agent:', payload); // Added debugging
-        
-        const response = await fetch(`${API_BASE_URL}/api/chat`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+            try {
+                updateAgentStatus(agentLetter, 'working');
+                const agentConfig = AGENT_CONFIG[agentId];
+                
+                if (!agentConfig) {
+                    throw new Error(`Agent configuration not found for: ${agentId}`);
+                }
+                
+                const payload = {
+                    message: message,
+                    agents: [agentId],
+                    session_id: currentSession,
+                    mode: selectedAdvisorMode || 'general'
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-        console.log('Response status:', response.status); // Added debugging
+                let responseText;
+                if (response.ok) {
+                    const data = await response.json();
+                    responseText = extractResponseText(data);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
 
-        let responseText;
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Response data:', data); // Added debugging
-            
-            // FIXED: Handle different response formats from backend
-            if (data.error) {
-                throw new Error(data.error);
+                updateAgentResponse(agentLetter, responseText);
+                addMessageToConversation('agent', `Agent ${agentLetter.toUpperCase()} (${agentConfig.name})`, responseText);
+                updateAgentStatus(agentLetter, 'ready');
+                
+                messageCount++;
+                if (messageCount % 2 === 0) {
+                    roundCount++;
+                }
+                updateDiagnostics();
+                
+                return responseText;
+            } catch (error) {
+                console.error(`Agent ${agentLetter} error:`, error);
+                const errorMsg = `Error: ${error.message}`;
+                updateAgentResponse(agentLetter, errorMsg);
+                addMessageToConversation('system', `Agent ${agentLetter.toUpperCase()} Error`, errorMsg);
+                updateAgentStatus(agentLetter, 'error');
+                throw error;
             }
-            
-            responseText = data.reply || data.response || extractResponseText(data);
-        } else {
-            const errorText = await response.text();
-            console.error('HTTP Error Response:', errorText); // Added debugging
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-
-        updateAgentResponse(agentLetter, responseText);
-        addMessageToConversation('agent', `Agent ${agentLetter.toUpperCase()} (${agentConfig.name})`, responseText);
-        updateAgentStatus(agentLetter, 'ready');
-        
-        messageCount++;
-        if (messageCount % 2 === 0) {
-            roundCount++;
-        }
-        updateDiagnostics();
-        
-        return responseText;
-    } catch (error) {
-        console.error(`Agent ${agentLetter} error:`, error);
-        const errorMsg = `Error: ${error.message}`;
-        updateAgentResponse(agentLetter, errorMsg);
-        addMessageToConversation('system', `Agent ${agentLetter.toUpperCase()} Error`, errorMsg);
-        updateAgentStatus(agentLetter, 'error');
-        throw error;
-    }
-}
-
 
         // ======= MESSAGE EXTRACTION (UNCHANGED) =======
         function extractResponseText(data) {
@@ -3281,7 +3162,7 @@ Total messages: ${messageCount}
         
         async function updateCreditsDisplay() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/user/status`, {
+                const response = await fetch(`${API_BASE_URL}/api/user/credits`, {
                     headers: {
                         'X-User-ID': 'demo_user'
                     }
@@ -3357,7 +3238,7 @@ Total messages: ${messageCount}
         document.addEventListener('DOMContentLoaded', function() {
             updateCreditsDisplay();
         });
-    >
+    </script>
 
     <!-- ===== PAYMENT MODALS ===== -->
     
