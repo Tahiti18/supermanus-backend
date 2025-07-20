@@ -1287,7 +1287,7 @@
                     <select id="agent-a-select" class="form-select">
                     <option value="">Select Agent A...</option>
                     <option value="gpt4o">GPT-4o</option>
-                    <option value="chatgpt">ChatGPT 4 Turbo</option>
+                    <option value="chatgpt4">ChatGPT 4 Turbo</option>
                     <option value="deepseek">DeepSeek R1</option>
                     <option value="llama">Meta Llama 3.3</option>
                     <option value="mistral">Mistral Large</option>
@@ -1360,9 +1360,8 @@
                 
                 <div class="form-group">
                     <select id="agent-b-select" class="form-select">
-                    <option value="">Select Agent B...</option>
                     <option value="gpt4o">GPT-4o</option>
-                    <option value="chatgpt">ChatGPT 4 Turbo</option>
+                    <option value="chatgpt4">ChatGPT 4 Turbo</option>
                     <option value="deepseek">DeepSeek R1</option>
                     <option value="llama">Meta Llama 3.3</option>
                     <option value="mistral">Mistral Large</option>
@@ -1826,10 +1825,10 @@ const AGENT_CONFIG = {
         endpoint: "api/chat",
         model: "openai/gpt-4o"
     },
-    "chatgpt": {
-        name: "ChatGPT 4 Turbo",
-        endpoint: "api/chat",
-        model: "openai/gpt-4-turbo"
+    "chatgpt4": {
+    name: "ChatGPT 4 Turbo",
+    endpoint: "api/chat",
+    model: "openai/gpt-4-turbo"
     },
     "deepseek": {
         name: "DeepSeek R1",
@@ -3006,7 +3005,7 @@ const AGENT_CONFIG = {
         }
 
         function resetAgent(agent) {
-            const agentSelect = document.getElementById(`agent-${agent}-select`);
+            elect = document.getElementById(`agent-${agent}-select`);
             const agentName = agentSelect.value ? AGENT_CONFIG[agentSelect.value]?.name : `Agent ${agent.toUpperCase()}`;
             updateAgentResponse(agent, `## 🔄 Agent Reset\n\n**${agentName}** has been reset and is ready for collaboration.\n\n- Session data cleared\n- Fresh context initialized\n- Ready for new conversations`);
             updateAgentStatus(agent, 'ready');
