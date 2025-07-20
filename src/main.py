@@ -391,7 +391,14 @@ def deduct_credits(user_id, amount):
         
     except Exception as e:
         logger.error(f"Deduct credits error: {str(e)}")
-
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "message": "PromptLink Backend Online", 
+        "status": "ready",
+        "version": "Enhanced 106MB Backend",
+        "health_check": "/api/health"
+    })
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
