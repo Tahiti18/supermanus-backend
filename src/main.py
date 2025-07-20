@@ -32,7 +32,7 @@ CORS(app, origins=["*"])
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://your-netlify-site.netlify.app')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://silly-conkies-f4cfde.netlify.app')
 DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'promptlink.db')
 
 # 🌐 API ENDPOINTS
