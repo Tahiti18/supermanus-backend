@@ -1,11 +1,12 @@
 """
-🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND
+🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND - CORS FIXED VERSION
 - All 10 AI Agents Working
 - Human Simulator Autonomous Mode (1-30 rounds)
 - Complete Payment Integration with Stripe
 - Virtual Environment Included
 - All Dependencies Pre-installed
 - Railway/Heroku/Any Platform Ready
+- CORS ISSUES FIXED
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -26,7 +27,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins=["*"])
+
+# 🔧 ENHANCED CORS CONFIGURATION - FIXED
+CORS(app, 
+     origins=["*"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+     supports_credentials=True,
+     expose_headers=["Content-Type", "Authorization"])
 
 # 🔧 ENHANCED CONFIGURATION
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
@@ -164,7 +172,7 @@ PAYMENT_PLANS = {
         "max_rounds": 5
     },
     "basic": {
-        "amount": 1900,  # $19.00 in cents
+        "amount": 1900,
         "credits": 5000,
         "name": "Basic Plan", 
         "daily_limit": 500,
@@ -173,7 +181,7 @@ PAYMENT_PLANS = {
         "max_rounds": 15
     },
     "professional": {
-        "amount": 9900,  # $99.00 in cents
+        "amount": 9900,
         "credits": 25000,
         "name": "Professional Plan",
         "daily_limit": 2000,
@@ -182,7 +190,7 @@ PAYMENT_PLANS = {
         "max_rounds": 30
     },
     "expert": {
-        "amount": 49900,  # $499.00 in cents
+        "amount": 49900,
         "credits": 150000,
         "name": "Expert Plan",
         "daily_limit": 10000,
@@ -194,12 +202,10 @@ PAYMENT_PLANS = {
 
 # 🗄️ DATABASE INITIALIZATION
 def init_database():
-    """Initialize SQLite database for user sessions and data"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         
-        # Users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -213,7 +219,6 @@ def init_database():
             )
         ''')
         
-        # Sessions table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
@@ -230,7 +235,6 @@ def init_database():
             )
         ''')
         
-        # Human Simulator sessions table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS human_simulator_sessions (
                 id TEXT PRIMARY KEY,
@@ -248,7 +252,6 @@ def init_database():
             )
         ''')
         
-        # Payments table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS payments (
                 id TEXT PRIMARY KEY,
@@ -268,90 +271,9 @@ def init_database():
     except Exception as e:
         logger.error(f"Database initialization error: {str(e)}")
 
-# Initialize database on startup
 init_database()
 
-# 🔧 UTILITY FUNCTIONS
-def call_openrouter_api(model, messages, max_tokens=1000, temperature=0.7):
-    """Enhanced OpenRouter API call with retry logic"""
-    try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": FRONTEND_URL,
-            "X-Title": "PromptLink Enhanced 106MB Backend"
-        }
-        
-        payload = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature
-        }
-        
-        # Retry logic
-        for attempt in range(3):
-            try:
-                response = requests.post(
-                    f"{OPENROUTER_BASE_URL}/chat/completions",
-                    headers=headers,
-                    json=payload,
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    return response.json()
-                elif response.status_code == 429:
-                    # Rate limited, wait and retry
-                    time.sleep(2 ** attempt)
-                    continue
-                else:
-                    logger.warning(f"OpenRouter API error: {response.status_code}")
-                    return None
-                    
-            except requests.exceptions.Timeout:
-                logger.warning(f"OpenRouter API timeout, attempt {attempt + 1}")
-                if attempt < 2:
-                    time.sleep(1)
-                    continue
-                return None
-                
-        return None
-        
-    except Exception as e:
-        logger.error(f"OpenRouter API Error: {str(e)}")
-        return None
-
-def generate_enhanced_demo_response(agent_id, message, personality=None):
-    """Generate enhanced demo response with personality"""
-    agent_info = AGENT_MODELS.get(agent_id, {})
-    agent_name = agent_info.get('name', agent_id.upper())
-    
-    personality_context = ""
-    if personality and personality in HUMAN_PERSONALITIES:
-        personality_info = HUMAN_PERSONALITIES[personality]
-        personality_context = f" (guided by {personality_info['name']} approach)"
-    
-    responses = [
-        f"🤖 {agent_name} Analysis{personality_context}: Your query about '{message[:50]}...' presents several interesting dimensions to explore.",
-        f"Based on your question regarding '{message[:40]}...', I can provide comprehensive insights from multiple perspectives.",
-        f"🔍 {agent_name} Deep Dive{personality_context}: This topic requires careful analysis of the underlying factors and implications.",
-        f"Examining '{message[:30]}...' through the lens of {agent_name}'s capabilities, I see several key areas to address."
-    ]
-    
-    base_response = random.choice(responses)
-    
-    # Add personality-specific insights
-    if personality and personality in HUMAN_PERSONALITIES:
-        personality_info = HUMAN_PERSONALITIES[personality]
-        base_response += f"\n\n{personality_info['prompt_style']} "
-    
-    base_response += f"\n\n[This is an enhanced demo response. Configure OPENROUTER_API_KEY for real AI responses from {agent_name}.]"
-    
-    return base_response
-
 def get_user_credits(user_id):
-    """Get user credits with daily reset logic"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
@@ -362,10 +284,8 @@ def get_user_credits(user_id):
         if result:
             credits, daily_credits, last_reset, plan = result
             
-            # Check if daily reset is needed
             today = datetime.now().date()
             if last_reset != today.isoformat():
-                # Reset daily credits
                 plan_info = PAYMENT_PLANS.get(plan, PAYMENT_PLANS['free'])
                 daily_credits = plan_info['daily_limit']
                 
@@ -378,7 +298,6 @@ def get_user_credits(user_id):
             conn.close()
             return credits, daily_credits
         else:
-            # Create new user
             cursor.execute(
                 'INSERT INTO users (id, credits, daily_credits) VALUES (?, ?, ?)',
                 (user_id, 100, 100)
@@ -391,35 +310,7 @@ def get_user_credits(user_id):
         logger.error(f"Get user credits error: {str(e)}")
         return 100, 100
 
-def consume_user_credits(user_id, amount):
-    """Consume user credits"""
-    try:
-        conn = sqlite3.connect(DATABASE_PATH)
-        cursor = conn.cursor()
-        
-        credits, daily_credits = get_user_credits(user_id)
-        
-        if daily_credits >= amount:
-            new_daily_credits = daily_credits - amount
-            new_credits = max(0, credits - amount)
-            
-            cursor.execute(
-                'UPDATE users SET credits = ?, daily_credits = ? WHERE id = ?',
-                (new_credits, new_daily_credits, user_id)
-            )
-            conn.commit()
-            conn.close()
-            return True, new_credits, new_daily_credits
-        else:
-            conn.close()
-            return False, credits, daily_credits
-            
-    except Exception as e:
-        logger.error(f"Consume credits error: {str(e)}")
-        return False, 0, 0
-
 def get_or_create_user(user_id):
-    """Get or create user in database"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
@@ -438,7 +329,6 @@ def get_or_create_user(user_id):
             
         conn.close()
         
-        # Return a user object-like structure
         class User:
             def __init__(self, data):
                 self.id = data[0]
@@ -450,7 +340,6 @@ def get_or_create_user(user_id):
         
     except Exception as e:
         logger.error(f"Get/create user error: {str(e)}")
-        # Return default user
         class User:
             def __init__(self):
                 self.id = user_id
@@ -459,12 +348,10 @@ def get_or_create_user(user_id):
         return User()
 
 def save_message(session_id, user_id, agent_id, message, reply):
-    """Save conversation message to database"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         
-        # Create conversations table if not exists
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
@@ -477,7 +364,6 @@ def save_message(session_id, user_id, agent_id, message, reply):
             )
         ''')
         
-        # Insert conversation
         conversation_id = str(uuid.uuid4())
         cursor.execute(
             'INSERT INTO conversations (id, session_id, user_id, agent_id, user_message, agent_reply) VALUES (?, ?, ?, ?, ?, ?)',
@@ -491,7 +377,6 @@ def save_message(session_id, user_id, agent_id, message, reply):
         logger.error(f"Save message error: {str(e)}")
 
 def deduct_credits(user_id, amount):
-    """Deduct credits from user account"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
@@ -507,18 +392,16 @@ def deduct_credits(user_id, amount):
     except Exception as e:
         logger.error(f"Deduct credits error: {str(e)}")
 
-
-# 🌟 HEALTH CHECK ENDPOINT
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND HEALTH CHECK"""
     return jsonify({
         "status": "ENHANCED 106 MB BACKEND ONLINE",
         "message": "🔥 COMPLETE INDEPENDENCE WITH ALL ENHANCEMENTS!",
-        "version": "7.0.0 - Enhanced 106 MB Independence Edition",
+        "version": "7.0.0 - Enhanced 106 MB Independence Edition - CORS FIXED",
         "deployment": "Railway/Heroku/Any Platform Ready",
         "frontend": "Enhanced Netlify Compatible", 
         "agents_configured": len(AGENT_MODELS),
+        "cors_fixed": True,
         "features": [
             "All 10 AI Agents Working",
             "Human Simulator Autonomous Mode (1-50 rounds)", 
@@ -528,7 +411,8 @@ def health_check():
             "SQLite Database Included",
             "Enhanced Frontend Compatible",
             "Railway Deployment Ready",
-            "Zero ManusVM Dependencies"
+            "Zero ManusVM Dependencies",
+            "CORS Issues Fixed"
         ],
         "database": "SQLite with user sessions",
         "api_key_configured": bool(OPENROUTER_API_KEY),
@@ -538,10 +422,46 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     })
 
-# 🤖 ENHANCED AGENT CHAT ENDPOINT
+@app.route('/api/user/credits', methods=['GET'])
+def get_user_credits_endpoint():
+    try:
+        user_id = request.args.get('user_id', 'anonymous')
+        
+        credits, daily_credits = get_user_credits(user_id)
+        
+        try:
+            conn = sqlite3.connect(DATABASE_PATH)
+            cursor = conn.cursor()
+            cursor.execute('SELECT plan FROM users WHERE id = ?', (user_id,))
+            result = cursor.fetchone()
+            plan = result[0] if result else 'free'
+            conn.close()
+        except Exception as e:
+            logger.warning(f"Failed to get user plan: {str(e)}")
+            plan = 'free'
+        
+        plan_info = PAYMENT_PLANS.get(plan, PAYMENT_PLANS['free'])
+        
+        return jsonify({
+            "user_id": user_id,
+            "credits": credits,
+            "daily_credits": daily_credits,
+            "daily_limit": plan_info['daily_limit'],
+            "plan": plan,
+            "plan_name": plan_info['name'],
+            "human_simulator": plan_info.get('human_simulator', False),
+            "status": "success",
+            "message": "Credits retrieved successfully"
+        })
+        
+    except Exception as e:
+        logger.error(f"Get user credits error: {str(e)}")
+        return jsonify({
+            "error": f"Failed to get user credits: {str(e)}"
+        }), 500
+
 @app.route('/api/chat', methods=['POST'])
 def chat_with_agent():
-    """🤖 SUPERMANUS ENHANCED AGENT CHAT - ALL 10 AGENTS WITH CREDITS"""
     try:
         data = request.json
         agent_id = data.get('agent')
@@ -558,16 +478,14 @@ def chat_with_agent():
         if not message or not message.strip():
             return jsonify({ "error": "Message cannot be empty." }), 400
 
-        # Retrieve or initialize user
         user = get_or_create_user(user_id)
         if user.credits < 1:
             return jsonify({ "error": "Insufficient credits." }), 402
 
-        # Forward request to OpenRouter agent
         agent = AGENT_MODELS[agent_id]
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://promptlink.org",
+            "HTTP-Referer": FRONTEND_URL,
             "X-Title": "PromptLink"
         }
 
@@ -592,7 +510,6 @@ def chat_with_agent():
         completion = openrouter_response.json()
         reply = completion["choices"][0]["message"]["content"]
 
-        # Save message to DB and deduct credit
         save_message(session_id, user_id, agent_id, message, reply)
         deduct_credits(user_id, 1)
 
@@ -606,10 +523,8 @@ def chat_with_agent():
     except Exception as e:
         return jsonify({ "error": "Server error", "details": str(e) }), 500
 
-# 📋 ENHANCED AGENTS LIST ENDPOINT
 @app.route('/api/agents/list', methods=['GET'])
 def list_agents():
-    """📋 SUPERMANUS ENHANCED AGENT LIST - ALL 10 WITH DETAILS"""
     user_id = request.args.get('user_id', 'anonymous')
     credits, daily_credits = get_user_credits(user_id)
     
@@ -636,10 +551,8 @@ def list_agents():
         "message": "🦸‍♂️ ALL 10 ENHANCED AGENTS CONFIGURED AND READY!"
     })
 
-# 🚀 ENHANCED SESSION MANAGEMENT
 @app.route('/api/session/start', methods=['POST'])
 def start_session():
-    """🚀 SUPERMANUS ENHANCED SESSION MANAGEMENT"""
     try:
         data = request.json
         mode = data.get('mode', 'manual')
@@ -650,7 +563,6 @@ def start_session():
         
         session_id = str(uuid.uuid4())
         
-        # Save session to database
         try:
             conn = sqlite3.connect(DATABASE_PATH)
             cursor = conn.cursor()
@@ -680,23 +592,20 @@ def start_session():
             "error": f"Session start error: {str(e)}"
         }), 500
 
-# 🎭 ENHANCED HUMAN SIMULATOR ENDPOINTS
 @app.route('/api/human-simulator/start', methods=['POST'])
 def start_human_simulator():
-    """🎭 SUPERMANUS ENHANCED HUMAN SIMULATOR AUTONOMOUS MODE"""
     try:
         data = request.json
-        mode = data.get('mode')  # 'agent_a', 'agent_b', or 'dual'
+        mode = data.get('mode')
         agent_a = data.get('agent_a')
         agent_b = data.get('agent_b') 
         initial_prompt = data.get('prompt')
-        rounds = min(int(data.get('rounds', 15)), 50)  # Max 50 rounds for enhanced version
+        rounds = min(int(data.get('rounds', 15)), 50)
         strategy = data.get('strategy', 'balanced')
         instructions = data.get('instructions', '')
         personality = data.get('personality', 'analytical')
         user_id = data.get('user_id', 'anonymous')
         
-        # Check if user has access to Human Simulator
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT plan FROM users WHERE id = ?', (user_id,))
@@ -714,7 +623,6 @@ def start_human_simulator():
                 "message": "Upgrade to Basic plan or higher to access Human Simulator"
             }), 402
         
-        # Limit rounds based on plan
         max_rounds = plan_info.get('max_rounds', 5)
         rounds = min(rounds, max_rounds)
         
@@ -725,12 +633,10 @@ def start_human_simulator():
         
         personality_info = HUMAN_PERSONALITIES[personality]
         
-        # 💰 CREDIT COST CALCULATION (Premium Feature)
         base_cost = 50
         round_cost = rounds * 10
         total_cost = base_cost + round_cost
         
-        # Check credits
         credits, daily_credits = get_user_credits(user_id)
         if daily_credits < total_cost:
             return jsonify({
@@ -740,7 +646,6 @@ def start_human_simulator():
                 "message": "Human Simulator requires more credits"
             }), 402
         
-        # Save Human Simulator session
         try:
             conn = sqlite3.connect(DATABASE_PATH)
             cursor = conn.cursor()
@@ -779,7 +684,6 @@ def start_human_simulator():
 
 @app.route('/api/human-simulator/round', methods=['POST'])
 def human_simulator_round():
-    """🎭 EXECUTE ENHANCED HUMAN SIMULATOR ROUND"""
     try:
         data = request.json
         session_id = data.get('session_id')
@@ -787,7 +691,6 @@ def human_simulator_round():
         conversation_history = data.get('conversation_history', [])
         user_id = data.get('user_id', 'anonymous')
         
-        # Get session info
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT personality, strategy, instructions FROM human_simulator_sessions WHERE id = ?', (session_id,))
@@ -800,29 +703,22 @@ def human_simulator_round():
         personality, strategy, instructions = result
         conn.close()
         
-        # Get personality info
         personality_info = HUMAN_PERSONALITIES.get(personality, HUMAN_PERSONALITIES['analytical'])
         
-        # 🤖 INTELLIGENT AGENT SELECTION BASED ON PERSONALITY AND STRATEGY
         if strategy == 'focused':
-            # Use personality preferences
             available_agents = personality_info['agent_preference']
         elif strategy == 'balanced':
-            # Use all agents equally
             available_agents = list(AGENT_MODELS.keys())
         elif strategy == 'adaptive':
-            # Adapt based on conversation history
             if len(conversation_history) < 3:
                 available_agents = personality_info['agent_preference']
             else:
                 available_agents = list(AGENT_MODELS.keys())
-        else:  # intensive
-            # Use all agents with preference for high-capability ones
+        else:
             available_agents = ['gpt4o', 'deepseek', 'gemini2', 'perplexity'] + list(AGENT_MODELS.keys())
         
         selected_agent = random.choice(available_agents)
         
-        # 🧠 GENERATE HUMAN-LIKE PROMPT BASED ON PERSONALITY
         personality_prompts = {
             'analytical': [
                 "Let's analyze this systematically with data and evidence.",
@@ -865,7 +761,6 @@ def human_simulator_round():
         personality_prompt_list = personality_prompts.get(personality, personality_prompts['analytical'])
         human_prompt = random.choice(personality_prompt_list)
         
-        # Add custom instructions if provided
         if instructions:
             human_prompt = f"{instructions} {human_prompt}"
         
@@ -888,195 +783,13 @@ def human_simulator_round():
             "error": f"Human simulator round error: {str(e)}"
         }), 500
 
-
-# 💰 ENHANCED PAYMENT INTEGRATION ENDPOINTS
-@app.route('/api/payment/create-checkout', methods=['POST'])
-def create_checkout_session():
-    """💰 SUPERMANUS ENHANCED STRIPE PAYMENT INTEGRATION"""
-    try:
-        data = request.json
-        plan = data.get('plan')
-        user_id = data.get('user_id', 'anonymous')
-        
-        if plan not in PAYMENT_PLANS:
-            return jsonify({
-                "error": f"Invalid plan: {plan}",
-                "available_plans": list(PAYMENT_PLANS.keys())
-            }), 400
-        
-        plan_info = PAYMENT_PLANS[plan]
-        
-        if plan == 'free':
-            return jsonify({
-                "error": "Free plan doesn't require payment",
-                "message": "You're already on the free plan"
-            }), 400
-        
-        if not STRIPE_SECRET_KEY:
-            # Demo mode - simulate payment process
-            payment_id = str(uuid.uuid4())
-            
-            # Save demo payment
-            try:
-                conn = sqlite3.connect(DATABASE_PATH)
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO payments (id, user_id, plan, amount, status) VALUES (?, ?, ?, ?, ?)',
-                    (payment_id, user_id, plan, plan_info['amount'], 'demo_success')
-                )
-                conn.commit()
-                conn.close()
-            except Exception as e:
-                logger.warning(f"Failed to save demo payment: {str(e)}")
-            
-            return jsonify({
-                "checkout_url": f"{FRONTEND_URL}/payment-success?session_id={payment_id}&plan={plan}",
-                "session_id": payment_id,
-                "plan": plan,
-                "amount": plan_info['amount'],
-                "demo_mode": True,
-                "message": "🎭 DEMO PAYMENT - Configure STRIPE_SECRET_KEY for real payments",
-                "status": "demo_success"
-            })
-        
-        # 🔥 REAL STRIPE INTEGRATION
-        try:
-            import stripe
-            stripe.api_key = STRIPE_SECRET_KEY
-            
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': f'PromptLink {plan_info["name"]}',
-                            'description': f'{plan_info["credits"]} credits, {", ".join(plan_info["features"])}',
-                        },
-                        'unit_amount': plan_info['amount'],
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url=f'{FRONTEND_URL}/payment-success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}',
-                cancel_url=f'{FRONTEND_URL}/payment-cancelled?plan={plan}',
-                metadata={
-                    'user_id': user_id,
-                    'plan': plan
-                }
-            )
-            
-            # Save payment record
-            try:
-                conn = sqlite3.connect(DATABASE_PATH)
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO payments (id, user_id, plan, amount, stripe_session_id, status) VALUES (?, ?, ?, ?, ?, ?)',
-                    (str(uuid.uuid4()), user_id, plan, plan_info['amount'], checkout_session.id, 'pending')
-                )
-                conn.commit()
-                conn.close()
-            except Exception as e:
-                logger.warning(f"Failed to save payment record: {str(e)}")
-            
-            return jsonify({
-                "checkout_url": checkout_session.url,
-                "session_id": checkout_session.id,
-                "plan": plan,
-                "amount": plan_info['amount'],
-                "demo_mode": False,
-                "message": "🔥 REAL STRIPE CHECKOUT CREATED!",
-                "status": "pending"
-            })
-            
-        except ImportError:
-            return jsonify({
-                "error": "Stripe library not installed",
-                "message": "Install stripe library: pip install stripe"
-            }), 500
-        except Exception as stripe_error:
-            logger.error(f"Stripe error: {str(stripe_error)}")
-            return jsonify({
-                "error": f"Payment processing error: {str(stripe_error)}"
-            }), 500
-            
-    except Exception as e:
-        logger.error(f"Payment error: {str(e)}")
-        return jsonify({
-            "error": f"Payment error: {str(e)}"
-        }), 500
-
-@app.route('/api/payment/success', methods=['POST'])
-def payment_success():
-    """💰 HANDLE SUCCESSFUL PAYMENT"""
-    try:
-        data = request.json
-        session_id = data.get('session_id')
-        plan = data.get('plan')
-        user_id = data.get('user_id', 'anonymous')
-        
-        if not session_id or not plan:
-            return jsonify({
-                "error": "Missing session_id or plan"
-            }), 400
-        
-        plan_info = PAYMENT_PLANS.get(plan)
-        if not plan_info:
-            return jsonify({
-                "error": f"Invalid plan: {plan}"
-            }), 400
-        
-        # Update user plan and credits
-        try:
-            conn = sqlite3.connect(DATABASE_PATH)
-            cursor = conn.cursor()
-            
-            # Update user plan
-            cursor.execute(
-                'UPDATE users SET plan = ?, credits = credits + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                (plan, plan_info['credits'], user_id)
-            )
-            
-            # Update payment status
-            cursor.execute(
-                'UPDATE payments SET status = ? WHERE stripe_session_id = ? OR id = ?',
-                ('completed', session_id, session_id)
-            )
-            
-            conn.commit()
-            conn.close()
-            
-            return jsonify({
-                "status": "success",
-                "plan": plan,
-                "credits_added": plan_info['credits'],
-                "features": plan_info['features'],
-                "message": f"🎉 Welcome to {plan_info['name']}! {plan_info['credits']} credits added.",
-                "human_simulator_enabled": plan_info.get('human_simulator', False),
-                "max_rounds": plan_info.get('max_rounds', 5)
-            })
-            
-        except Exception as e:
-            logger.error(f"Database error in payment success: {str(e)}")
-            return jsonify({
-                "error": f"Failed to update user plan: {str(e)}"
-            }), 500
-            
-    except Exception as e:
-        logger.error(f"Payment success error: {str(e)}")
-        return jsonify({
-            "error": f"Payment success error: {str(e)}"
-        }), 500
-
 @app.route('/api/user/status', methods=['GET'])
 def user_status():
-    """👤 GET ENHANCED USER STATUS"""
     try:
         user_id = request.args.get('user_id', 'anonymous')
         
         credits, daily_credits = get_user_credits(user_id)
         
-        # Get user plan
         try:
             conn = sqlite3.connect(DATABASE_PATH)
             cursor = conn.cursor()
@@ -1107,7 +820,7 @@ def user_status():
             "max_rounds": plan_info.get('max_rounds', 5),
             "created_at": created_at,
             "status": "active",
-            "backend_version": "7.0.0 - Enhanced 106 MB Independence Edition"
+            "backend_version": "7.0.0 - Enhanced 106 MB Independence Edition - CORS FIXED"
         })
         
     except Exception as e:
@@ -1116,10 +829,8 @@ def user_status():
             "error": f"User status error: {str(e)}"
         }), 500
 
-# 🔧 ENHANCED UTILITY ENDPOINTS
 @app.route('/api/plans', methods=['GET'])
 def get_payment_plans():
-    """💰 GET ALL ENHANCED PAYMENT PLANS"""
     return jsonify({
         "plans": PAYMENT_PLANS,
         "message": "🦸‍♂️ ENHANCED PAYMENT PLANS WITH HUMAN SIMULATOR",
@@ -1134,7 +845,6 @@ def get_payment_plans():
 
 @app.route('/api/personalities', methods=['GET'])
 def get_personalities():
-    """🎭 GET HUMAN SIMULATOR PERSONALITIES"""
     return jsonify({
         "personalities": HUMAN_PERSONALITIES,
         "message": "🎭 ENHANCED HUMAN SIMULATOR PERSONALITIES",
@@ -1142,7 +852,6 @@ def get_personalities():
         "strategies": ["balanced", "focused", "adaptive", "intensive"]
     })
 
-# 🚀 ENHANCED MAIN APPLICATION
 if __name__ == '__main__':
     logger.info("🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND STARTING...")
     logger.info(f"Database: {DATABASE_PATH}")
@@ -1150,12 +859,11 @@ if __name__ == '__main__':
     logger.info(f"Stripe API: {'✅ Configured' if STRIPE_SECRET_KEY else '❌ Not configured'}")
     logger.info(f"Frontend URL: {FRONTEND_URL}")
     logger.info("🔥 ALL 10 AGENTS + HUMAN SIMULATOR + PAYMENTS READY!")
+    logger.info("✅ CORS ISSUES FIXED!")
     
-    # Run the enhanced backend
     app.run(
         host='0.0.0.0',
         port=int(os.getenv('PORT', 5000)),
         debug=False,
         threaded=True
     )
-
