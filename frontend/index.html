@@ -3139,7 +3139,7 @@ Total messages: ${messageCount}
         const data = await response.json();
         console.log('Response data:', data);
         
-        if (data.success && data.checkout_url) {
+        if (data.checkout_url) {
             window.location.href = data.checkout_url;
         } else {
             alert('Payment processing failed. Please try again.');
