@@ -292,133 +292,6 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     })
 
-# 💳 STRIPE PAYMENT ENDPOINTS - EXACT PATHS FROM LOGS
-
-@app.route('/api/payments/create-checkout', methods=['POST', 'OPTIONS'])
-def create_checkout():
-    """Create Stripe checkout session - EXACT endpoint from frontend"""
-    if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
-        
-    try:
-        # Debug logging
-        logger.info(f"STRIPE_SECRET_KEY exists: {bool(STRIPE_SECRET_KEY)}")
-        logger.info(f"STRIPE_SECRET_KEY length: {len(STRIPE_SECRET_KEY) if STRIPE_SECRET_KEY else 0}")
-        logger.info(f"stripe module: {stripe}")
-        logger.info(f"stripe.api_key: {getattr(stripe, 'api_key', 'NOT SET')}")
-        
-        data = request.get_json()
-        logger.info(f"Received data: {data}")
-        
-        plan_type = data.get('plan', 'basic')
-        
-        if plan_type not in PAYMENT_PLANS:
-            return jsonify({'error': 'Invalid plan type'}), 400
-            
-        plan = PAYMENT_PLANS[plan_type]
-        logger.info(f"Selected plan: {plan}")
-        
-        # Handle free plan
-        if plan['amount'] == 0:
-            return jsonify({
-                'success': True,
-                'message': 'Free plan activated',
-                'credits': plan['credits']
-            })
-        
-        # Test stripe module before using
-        if not hasattr(stripe, 'checkout'):
-            logger.error("stripe.checkout not found!")
-            return jsonify({'error': 'Stripe not properly initialized'}), 500
-            
-        # Create Stripe checkout session
-        logger.info("About to create Stripe session...")
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': plan['name'],
-                        'description': f"{plan['credits']} AI Credits - {', '.join(plan['features'][:3])}",
-                    },
-                    'unit_amount': plan['amount'],
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=f"{FRONTEND_URL}?session_id={{CHECKOUT_SESSION_ID}}&success=true",
-            cancel_url=f"{FRONTEND_URL}?canceled=true",
-            metadata={
-                'plan': plan_type,
-                'credits': plan['credits']
-            }
-        )
-        
-        logger.info(f"Stripe session created: {session.id}")
-        return jsonify({
-            'checkout_url': session.url,
-            'session_id': session.id,
-            'success': True
-        })
-        
-    except Exception as e:
-        logger.error(f"Full error details: {type(e).__name__}: {str(e)}")
-        logger.error(f"Error args: {e.args}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': 'Payment processing failed. Please try again.'}), 500
-
-@app.route('/api/user/credits', methods=['GET', 'OPTIONS'])
-def get_user_credits():
-    """Get user credits - EXACT endpoint from frontend"""
-    if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
-        
-    try:
-        # For now, return default credits - in production you'd get from database
-        return jsonify({
-            'credits': 2500,
-            'plan': 'free',
-            'daily_limit': 500,
-            'success': True
-        })
-    except Exception as e:
-        logger.error(f"Credits fetch error: {e}")
-        return jsonify({'error': 'Failed to fetch credits'}), 500
-
-@app.route('/api/webhook', methods=['POST'])
-def stripe_webhook():
-    """Handle Stripe webhooks"""
-    payload = request.data
-    sig_header = request.headers.get('Stripe-Signature')
-    
-    try:
-        # In production, use your webhook secret
-        # event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-        
-        # For now, process the event directly
-        event = json.loads(payload)
-        
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            
-            # Update user credits in database
-            plan_type = session['metadata'].get('plan', 'basic')
-            credits = int(session['metadata'].get('credits', 5000))
-            
-            logger.info(f"Payment completed for plan: {plan_type}, credits: {credits}")
-            
-            # Here you would update the database with the new credits
-            # update_user_credits(customer_id, credits)
-            
-        return jsonify({'status': 'success'})
-        
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        return jsonify({'error': str(e)}), 400
-
-
 # 🤖 AI AGENTS ENDPOINT
 @app.route('/api/agents', methods=['GET'])
 def get_agents():
@@ -479,51 +352,183 @@ def chat():
         logger.error(f"Chat error: {e}")
         return jsonify({'error': 'Chat processing failed'}), 500
 
-# 💳 STRIPE PAYMENT ENDPOINT
-@app.route('/api/payments/create-checkout', methods=['POST'])
-def create_checkout():
-    """Create Stripe checkout session"""
+# 💳 STRIPE PAYMENT ENDPOINTS - FIXED VERSION (REMOVED DUPLICATE)
+@app.route('/api/payments/create-checkout', methods=['POST', 'OPTIONS'])
+def create_checkout_session():
+    """Create Stripe checkout session - FIXED: Removed duplicate route"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+        
     try:
+        # Debug logging
+        logger.info(f"STRIPE_SECRET_KEY exists: {bool(STRIPE_SECRET_KEY)}")
+        logger.info(f"STRIPE_SECRET_KEY length: {len(STRIPE_SECRET_KEY) if STRIPE_SECRET_KEY else 0}")
+        logger.info(f"stripe module: {stripe}")
+        logger.info(f"stripe.api_key: {getattr(stripe, 'api_key', 'NOT SET')}")
+        
         data = request.get_json()
+        logger.info(f"Received data: {data}")
         
-        if not data or 'plan' not in data or 'email' not in data:
-            return jsonify({"error": "Missing required information"}), 400
+        plan_type = data.get('plan', 'basic')
+        email = data.get('email', 'user@example.com')  # Fallback email
         
-        plan = data['plan']
-        email = data['email']
+        if plan_type not in PAYMENT_PLANS:
+            return jsonify({'error': 'Invalid plan type'}), 400
+            
+        plan = PAYMENT_PLANS[plan_type]
+        logger.info(f"Selected plan: {plan}")
         
-        if plan not in PAYMENT_PLANS:
-            return jsonify({"error": "Invalid plan selected"}), 400
+        # Handle free plan
+        if plan['amount'] == 0:
+            return jsonify({
+                'success': True,
+                'message': 'Free plan activated',
+                'credits': plan['credits']
+            })
         
-        checkout_session = stripe.checkout.Session.create(
+        # Test stripe module before using
+        if not hasattr(stripe, 'checkout'):
+            logger.error("stripe.checkout not found!")
+            return jsonify({'error': 'Stripe not properly initialized'}), 500
+            
+        # Create Stripe checkout session
+        logger.info("About to create Stripe session...")
+        session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {
-                        'name': PAYMENT_PLANS[plan]['name'],
+                        'name': plan['name'],
+                        'description': f"{plan['credits']} AI Credits - {', '.join(plan['features'][:3])}",
                     },
-                    'unit_amount': PAYMENT_PLANS[plan]['amount'],
+                    'unit_amount': plan['amount'],
                 },
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=f"{FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{FRONTEND_URL}/cancel",
-            customer_email=email
+            success_url=f"{FRONTEND_URL}?session_id={{CHECKOUT_SESSION_ID}}&success=true",
+            cancel_url=f"{FRONTEND_URL}?canceled=true",
+            customer_email=email,
+            metadata={
+                'plan': plan_type,
+                'credits': plan['credits']
+            }
         )
         
+        logger.info(f"Stripe session created: {session.id}")
         return jsonify({
-            "checkout_url": checkout_session.url,
-            "session_id": checkout_session.id,
-            "success": True
+            'checkout_url': session.url,
+            'session_id': session.id,
+            'success': True
         })
         
     except Exception as e:
-        logger.error(f"Stripe checkout error: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Full error details: {type(e).__name__}: {str(e)}")
+        logger.error(f"Error args: {e.args}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Payment processing failed. Please try again.'}), 500
+
+@app.route('/api/user/credits', methods=['GET', 'OPTIONS'])
+def get_user_credits():
+    """Get user credits"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+        
+    try:
+        # For now, return default credits - in production you'd get from database
+        return jsonify({
+            'credits': 2500,
+            'plan': 'free',
+            'daily_limit': 500,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Credits fetch error: {e}")
+        return jsonify({'error': 'Failed to fetch credits'}), 500
+
+@app.route('/api/webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhooks"""
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    
+    try:
+        # In production, use your webhook secret
+        # event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        
+        # For now, process the event directly
+        event = json.loads(payload)
+        
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            # Update user credits in database
+            plan_type = session['metadata'].get('plan', 'basic')
+            credits = int(session['metadata'].get('credits', 5000))
+            
+            logger.info(f"Payment completed for plan: {plan_type}, credits: {credits}")
+            
+            # Here you would update the database with the new credits
+            # update_user_credits(customer_id, credits)
+            
+        return jsonify({'status': 'success'})
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return jsonify({'error': str(e)}), 400
+
+# 🔧 ADDITIONAL UTILITY ENDPOINTS
+@app.route('/api/payment-status/', methods=['GET'])
+def get_payment_status(session_id):
+    """Get payment status for a session"""
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        return jsonify({
+            'status': session.payment_status,
+            'session_id': session_id,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Payment status error: {e}")
+        return jsonify({'error': 'Failed to retrieve payment status'}), 500
+
+# 🎭 HUMAN SIMULATOR ENDPOINTS
+@app.route('/api/human-simulator', methods=['POST'])
+def human_simulator():
+    """Advanced Human Simulator endpoint"""
+    try:
+        data = request.get_json()
+        personality = data.get('personality', 'analytical')
+        rounds = int(data.get('rounds', 5))
+        agents = data.get('agents', ['gpt4o', 'gemini15'])
+        initial_prompt = data.get('prompt', '')
+        
+        if personality not in HUMAN_PERSONALITIES:
+            return jsonify({'error': 'Invalid personality type'}), 400
+            
+        # Initialize conversation
+        conversation = {
+            'id': str(uuid.uuid4()),
+            'personality': HUMAN_PERSONALITIES[personality],
+            'rounds': rounds,
+            'agents': agents,
+            'messages': [],
+            'status': 'active'
+        }
+        
+        return jsonify({
+            'conversation_id': conversation['id'],
+            'status': 'initialized',
+            'personality': personality,
+            'success': True
+        })
+        
+    except Exception as e:
+        logger.error(f"Human simulator error: {e}")
+        return jsonify({'error': 'Human simulator initialization failed'}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
-
