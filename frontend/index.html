@@ -3128,16 +3128,9 @@ Total messages: ${messageCount}
     })
     .then(response => response.json())
     .then(data => {
-        alert('Backend response: ' + JSON.stringify(data));
         if (data.checkout_url) {
-            alert('Redirecting to Stripe...');
             window.location.href = data.checkout_url;
-        } else {
-            alert('No checkout_url found!');
         }
-    })
-    .catch(error => {
-        alert('Request failed: ' + error.message);
     });
 }
 
