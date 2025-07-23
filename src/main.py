@@ -23,6 +23,8 @@ import threading
 import logging
 import stripe
 import stripe.checkout
+# Fix Stripe version compatibility
+stripe.api_version = '2020-08-27'
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
