@@ -3142,7 +3142,7 @@ Total messages: ${messageCount}
                 
                 const data = await response.json();
                 
-                if (data.status === 'success' && data.checkout_url) {
+                if (data.success === true && data.checkout_url) {
                     // Redirect to Stripe checkout
                     window.location.href = data.checkout_url;
                 } else {
