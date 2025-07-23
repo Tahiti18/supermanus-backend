@@ -298,13 +298,22 @@ def create_checkout():
         return jsonify({'status': 'ok'}), 200
         
     try:
+        # Debug logging
+        logger.info(f"STRIPE_SECRET_KEY exists: {bool(STRIPE_SECRET_KEY)}")
+        logger.info(f"STRIPE_SECRET_KEY length: {len(STRIPE_SECRET_KEY) if STRIPE_SECRET_KEY else 0}")
+        logger.info(f"stripe module: {stripe}")
+        logger.info(f"stripe.api_key: {getattr(stripe, 'api_key', 'NOT SET')}")
+        
         data = request.get_json()
+        logger.info(f"Received data: {data}")
+        
         plan_type = data.get('plan', 'basic')
         
         if plan_type not in PAYMENT_PLANS:
             return jsonify({'error': 'Invalid plan type'}), 400
             
         plan = PAYMENT_PLANS[plan_type]
+        logger.info(f"Selected plan: {plan}")
         
         # Handle free plan
         if plan['amount'] == 0:
@@ -314,7 +323,13 @@ def create_checkout():
                 'credits': plan['credits']
             })
         
+        # Test stripe module before using
+        if not hasattr(stripe, 'checkout'):
+            logger.error("stripe.checkout not found!")
+            return jsonify({'error': 'Stripe not properly initialized'}), 500
+            
         # Create Stripe checkout session
+        logger.info("About to create Stripe session...")
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -337,17 +352,18 @@ def create_checkout():
             }
         )
         
+        logger.info(f"Stripe session created: {session.id}")
         return jsonify({
             'checkout_url': session.url,
             'session_id': session.id,
             'success': True
         })
         
-    except stripe.error.StripeError as e:
-        logger.error(f"Stripe error: {e}")
-        return jsonify({'error': f'Payment processing failed: {str(e)}'}), 400
     except Exception as e:
-        logger.error(f"Checkout creation error: {e}")
+        logger.error(f"Full error details: {type(e).__name__}: {str(e)}")
+        logger.error(f"Error args: {e.args}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Payment processing failed. Please try again.'}), 500
 
 @app.route('/api/user/credits', methods=['GET', 'OPTIONS'])
@@ -398,6 +414,7 @@ def stripe_webhook():
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 400
+
 
 # 🤖 AI AGENTS ENDPOINT
 @app.route('/api/agents', methods=['GET'])
