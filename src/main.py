@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 import threading
 import logging
 import stripe
+import stripe.checkout
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
