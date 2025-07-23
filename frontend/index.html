@@ -3124,8 +3124,7 @@ Total messages: ${messageCount}
     fetch('https://web-production-2816f.up.railway.app/api/payments/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan_id: planId, email: 'user@example.com' })
-    })
+        body: JSON.stringify({ plan: planId, email: 'user@example.com' })
     .then(response => response.json())
     .then(data => {
         if (data.checkout_url) {
