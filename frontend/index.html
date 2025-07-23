@@ -958,6 +958,23 @@
             flex: 1;
         }
     </style>
+        .logo-icon {
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 8px #00bcd4);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                filter: drop-shadow(0 0 8px #00bcd4) brightness(1);
+                transform: scale(1);
+            }
+            100% {
+                filter: drop-shadow(0 0 15px #00f5ff) brightness(1.1);
+                transform: scale(1.03);
+            }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar" style="min-height: 108px; height: 108px; padding: 20px 28px;">
@@ -968,6 +985,7 @@
             <div class="logo-subtitle">AI Collaboration on Autopilot</div>
         </div>
     </div>
+
 
     <div class="nav-menu" style="gap: 24px;">
         <a href="#" class="nav-link" style="padding: 8px 14px; font-size: 14px;">Platform</a>
