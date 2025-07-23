@@ -44,8 +44,13 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://silly-conkies-f4cfde.netlify.app')
 DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'promptlink.db')
 
-# Initialize Stripe
-stripe.api_key = STRIPE_SECRET_KEY
+# Initialize Stripe with error checking
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
+    print(f"Stripe initialized with key: {STRIPE_SECRET_KEY[:7]}...")
+else:
+    print("ERROR: STRIPE_SECRET_KEY not found in environment variables!")
+    stripe = None
 
 # 🌐 API ENDPOINTS
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
