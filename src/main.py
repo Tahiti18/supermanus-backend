@@ -1,5 +1,5 @@
 """
-🦸‍♂️ SUPERMANUS ENHANCED 106 MB BACKEND - CORS FIXED VERSION
+Ã°ÂŸÂ¦Â¸Ã¢Â€ÂÃ¢Â™Â‚Ã¯Â¸Â SUPERMANUS ENHANCED 106 MB BACKEND - CORS FIXED VERSION
 - All 10 AI Agents Working
 - Human Simulator Autonomous Mode (1-30 rounds)
 - Complete Payment Integration with Stripe
@@ -22,7 +22,6 @@ from datetime import datetime, timedelta
 import threading
 import logging
 import stripe
-import stripe.checkout
 # Fix Stripe version compatibility
 stripe.api_version = '2020-08-27'
 
@@ -32,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# 🔧 ENHANCED CORS CONFIGURATION - FIXED
+# Ã°ÂŸÂ”Â§ ENHANCED CORS CONFIGURATION - FIXED
 CORS(app, 
      origins=["*"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -40,7 +39,7 @@ CORS(app,
      supports_credentials=True,
      expose_headers=["Content-Type", "Authorization"])
 
-# 🔧 ENHANCED CONFIGURATION
+# Ã°ÂŸÂ”Â§ ENHANCED CONFIGURATION
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
@@ -55,10 +54,10 @@ else:
     print("ERROR: STRIPE_SECRET_KEY not found in environment variables!")
     stripe = None
 
-# 🌐 API ENDPOINTS
+# Ã°ÂŸÂŒÂ API ENDPOINTS
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# 🤖 ALL 10 AI AGENTS - COMPLETE CONFIGURATION
+# Ã°ÂŸÂ¤Â– ALL 10 AI AGENTS - COMPLETE CONFIGURATION
 AGENT_MODELS = {
     "gpt4o": {
         "model": "openai/gpt-4o",
@@ -132,7 +131,7 @@ AGENT_MODELS = {
     }
 }
 
-# 🎭 HUMAN SIMULATOR ENHANCED PERSONALITIES
+# Ã°ÂŸÂŽÂ­ HUMAN SIMULATOR ENHANCED PERSONALITIES
 HUMAN_PERSONALITIES = {
     "analytical": {
         "name": "Analytical Professional",
@@ -172,7 +171,7 @@ HUMAN_PERSONALITIES = {
     }
 }
 
-# 💰 ENHANCED PAYMENT PLANS
+# Ã°ÂŸÂ’Â° ENHANCED PAYMENT PLANS
 PAYMENT_PLANS = {
     "free": {
         "amount": 0,
@@ -251,7 +250,7 @@ def init_database():
 # Initialize database on startup
 init_database()
 
-# 🏠 HOME ROUTE
+# Ã°ÂŸÂÂ  HOME ROUTE
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -261,12 +260,12 @@ def home():
         "health_check": "/api/health"
     })
 
-# 🩺 ENHANCED HEALTH CHECK
+# Ã°ÂŸÂ©Âº ENHANCED HEALTH CHECK
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
         "status": "ENHANCED 106 MB BACKEND ONLINE",
-        "message": "🔥 COMPLETE INDEPENDENCE WITH ALL ENHANCEMENTS!",
+        "message": "Ã°ÂŸÂ”Â¥ COMPLETE INDEPENDENCE WITH ALL ENHANCEMENTS!",
         "version": "7.0.0 - Enhanced 106 MB Independence Edition - CORS FIXED",
         "deployment": "Railway/Heroku/Any Platform Ready",
         "frontend": "Enhanced Netlify Compatible",
@@ -292,7 +291,7 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     })
 
-# 🤖 AI AGENTS ENDPOINT
+# Ã°ÂŸÂ¤Â– AI AGENTS ENDPOINT
 @app.route('/api/agents', methods=['GET'])
 def get_agents():
     """Get all available AI agents"""
@@ -302,7 +301,7 @@ def get_agents():
         "status": "active"
     })
 
-# 💬 CHAT ENDPOINT
+# Ã°ÂŸÂ’Â¬ CHAT ENDPOINT
 @app.route('/api/chat', methods=['POST'])
 def chat():
     """Handle chat requests to AI agents"""
@@ -352,7 +351,7 @@ def chat():
         logger.error(f"Chat error: {e}")
         return jsonify({'error': 'Chat processing failed'}), 500
 
-# 💳 STRIPE PAYMENT ENDPOINTS - FIXED VERSION (REMOVED DUPLICATE)
+# Ã°ÂŸÂ’Â³ STRIPE PAYMENT ENDPOINTS - FIXED VERSION (REMOVED DUPLICATE)
 @app.route('/api/payments/create-checkout', methods=['POST', 'OPTIONS'])
 def create_checkout_session():
     """Create Stripe checkout session - FIXED: Removed duplicate route"""
@@ -479,7 +478,7 @@ def stripe_webhook():
         logger.error(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 400
 
-# 🔧 ADDITIONAL UTILITY ENDPOINTS
+# Ã°ÂŸÂ”Â§ ADDITIONAL UTILITY ENDPOINTS
 @app.route('/api/payment-status/', methods=['GET'])
 def get_payment_status(session_id):
     """Get payment status for a session"""
@@ -494,7 +493,7 @@ def get_payment_status(session_id):
         logger.error(f"Payment status error: {e}")
         return jsonify({'error': 'Failed to retrieve payment status'}), 500
 
-# 🎭 HUMAN SIMULATOR ENDPOINTS
+# Ã°ÂŸÂŽÂ­ HUMAN SIMULATOR ENDPOINTS
 @app.route('/api/human-simulator', methods=['POST'])
 def human_simulator():
     """Advanced Human Simulator endpoint"""
