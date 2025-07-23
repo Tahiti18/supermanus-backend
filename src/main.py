@@ -479,6 +479,51 @@ def chat():
         logger.error(f"Chat error: {e}")
         return jsonify({'error': 'Chat processing failed'}), 500
 
+# 💳 STRIPE PAYMENT ENDPOINT
+@app.route('/api/payments/create-checkout', methods=['POST'])
+def create_checkout():
+    """Create Stripe checkout session"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'plan' not in data or 'email' not in data:
+            return jsonify({"error": "Missing required information"}), 400
+        
+        plan = data['plan']
+        email = data['email']
+        
+        if plan not in PAYMENT_PLANS:
+            return jsonify({"error": "Invalid plan selected"}), 400
+        
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': PAYMENT_PLANS[plan]['name'],
+                    },
+                    'unit_amount': PAYMENT_PLANS[plan]['amount'],
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f"{FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{FRONTEND_URL}/cancel",
+            customer_email=email
+        )
+        
+        return jsonify({
+            "checkout_url": checkout_session.url,
+            "session_id": checkout_session.id,
+            "success": True
+        })
+        
+    except Exception as e:
+        logger.error(f"Stripe checkout error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
+
