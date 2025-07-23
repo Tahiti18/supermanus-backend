@@ -3120,35 +3120,25 @@ Total messages: ${messageCount}
             document.getElementById('low-credits-modal').style.display = 'none';
         }
         
-        async function selectPlan(planId) {
-    try {
-        console.log('Starting payment for plan:', planId);
-        
-        const response = await fetch(`${API_BASE_URL}/api/payments/create-checkout`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-            plan_id: planId,
-            email: 'user@example.com'
-           })
-        });
-        
-        console.log('Response status:', response.status);
-        const data = await response.json();
-        console.log('Response data:', data);
-        
+        function selectPlan(planId) {
+    fetch('https://web-production-2816f.up.railway.app/api/payments/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: planId, email: 'user@example.com' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Backend response: ' + JSON.stringify(data));
         if (data.checkout_url) {
+            alert('Redirecting to Stripe...');
             window.location.href = data.checkout_url;
         } else {
-            alert('Payment processing failed. Please try again.');
+            alert('No checkout_url found!');
         }
-        
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('Payment processing failed. Please try again.');
-    }
+    })
+    .catch(error => {
+        alert('Request failed: ' + error.message);
+    });
 }
 
         
