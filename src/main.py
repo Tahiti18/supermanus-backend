@@ -351,7 +351,7 @@ def chat():
         logger.error(f"Chat error: {e}")
         return jsonify({'error': 'Chat processing failed'}), 500
 
-# Ã°ÂŸÂ’Â³ STRIPE PAYMENT ENDPOINTS - FIXED VERSION (REMOVED DUPLICATE)
+# Ã°ÂŸÂ'Â³ STRIPE PAYMENT ENDPOINTS - FIXED VERSION (REMOVED DUPLICATE)
 @app.route('/api/payments/create-checkout', methods=['POST', 'OPTIONS'])
 def create_checkout_session():
     """Create Stripe checkout session - FIXED: Removed duplicate route"""
@@ -368,7 +368,7 @@ def create_checkout_session():
         data = request.get_json()
         logger.info(f"Received data: {data}")
         
-        plan_type = data.get('plan', 'basic')
+        plan_type = data.get('plan_id', 'basic')  # ← FIXED: Changed 'plan' to 'plan_id'
         email = data.get('email', 'user@example.com')  # Fallback email
         
         if plan_type not in PAYMENT_PLANS:
@@ -478,7 +478,7 @@ def stripe_webhook():
         logger.error(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 400
 
-# Ã°ÂŸÂ”Â§ ADDITIONAL UTILITY ENDPOINTS
+# Ã°ÂŸÂ"Â§ ADDITIONAL UTILITY ENDPOINTS
 @app.route('/api/payment-status/', methods=['GET'])
 def get_payment_status(session_id):
     """Get payment status for a session"""
@@ -531,3 +531,4 @@ def human_simulator():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
+
