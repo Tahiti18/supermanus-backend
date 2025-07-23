@@ -3130,9 +3130,9 @@ Total messages: ${messageCount}
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                plan: planId,
-                email: 'user@example.com'
-            })
+            plan_id: planId,
+            email: 'user@example.com'
+           })
         });
         
         console.log('Response status:', response.status);
