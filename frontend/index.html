@@ -3121,43 +3121,36 @@ Total messages: ${messageCount}
         }
         
         async function selectPlan(planId) {
-            try {
-                // Show loading state
-                const button = event.target;
-                const originalText = button.textContent;
-                button.textContent = 'Processing...';
-                button.disabled = true;
-                
-                // Create Stripe checkout session
-                const response = await fetch(`${API_BASE_URL}/api/payments/create-checkout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        plan: planId,
-                        email: 'user@example.com' // Replace with actual user email
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success === true && data.checkout_url) {
-                    // Redirect to Stripe checkout
-                    window.location.href = data.checkout_url;
-                } else {
-                    throw new Error(data.message || 'Failed to create checkout session');
-                }
-                
-            } catch (error) {
-                console.error('Payment error:', error);
-                alert('Payment processing failed. Please try again.');
-                
-                // Reset button
-                button.textContent = originalText;
-                button.disabled = false;
-            }
+    try {
+        console.log('Starting payment for plan:', planId);
+        
+        const response = await fetch(`${API_BASE_URL}/api/payments/create-checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                plan: planId,
+                email: 'user@example.com'
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success && data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else {
+            alert('Payment processing failed. Please try again.');
         }
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Payment processing failed. Please try again.');
+    }
+}
+
         
         async function updateCreditsDisplay() {
             try {
