@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+9<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PromptLink - AI Collaboration on Autopilot</title>
@@ -564,14 +564,6 @@
             box-shadow: 0 4px 16px rgba(0, 180, 216, 0.3), 0 0 0 1px rgba(0, 180, 216, 0.2);
         }
 
-        /* ===== SEND BUTTON POSITIONING FIX ===== */
-        #send-human-message {
-            position: absolute !important;
-            right: 20px !important;
-            bottom: 20px !important;
-            z-index: 1000;
-        }
-
         .agent-container {
             position: relative;
             transition: all 0.3s ease;
@@ -747,7 +739,6 @@
                 width: 280px;
             }
         }
-
 
         /* ===== FORM STYLING ===== */
         .form-group {
@@ -955,7 +946,18 @@
             opacity: 0.8;
         }
 
-        </style>
+        /* ===== ENHANCED PROMPT INPUT WITH VOICE ===== */
+        .prompt-input-container {
+            position: relative;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .prompt-input-container .form-textarea {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar" style="min-height: 108px; height: 108px; padding: 20px 28px;">
@@ -966,8 +968,6 @@
             <div class="logo-subtitle">AI Collaboration on Autopilot</div>
         </div>
     </div>
-
-
 
     <div class="nav-menu" style="gap: 24px;">
         <a href="#" class="nav-link" style="padding: 8px 14px; font-size: 14px;">Platform</a>
@@ -3124,7 +3124,8 @@ Total messages: ${messageCount}
     fetch('https://web-production-2816f.up.railway.app/api/payments/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planId, email: 'user@example.com' })
+        body: JSON.stringify({ plan_id: planId, email: 'user@example.com' })
+    })
     .then(response => response.json())
     .then(data => {
         if (data.checkout_url) {
