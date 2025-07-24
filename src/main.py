@@ -1,14 +1,3 @@
-ƒ"""
-Ã°ÂŸÂ¦Â¸Ã¢Â€ÂÃ¢Â™Â‚Ã¯Â¸Â SUPERMANUS ENHANCED 106 MB BACKEND - CORS FIXED VERSION
-- All 10 AI Agents Working
-- Human Simulator Autonomous Mode (1-30 rounds)
-- Complete Payment Integration with Stripe
-- Virtual Environment Included
-- All Dependencies Pre-installed
-- Railway/Heroku/Any Platform Ready
-- CORS ISSUES FIXED
-"""
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
