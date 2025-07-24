@@ -3250,7 +3250,8 @@ Total messages: ${messageCount}
                     </div>
 
                     <!-- Basic Plan -->
-                    <div class="plan-card" data-plan="basic">
+                    <div class="plan-card featured" data-plan="basic">
+                        <div class="plan-badge">Most Popular</div>
                         <div class="plan-header">
                             <h3>Basic</h3>
                             <div class="plan-price">$19<span>/month</span></div>
@@ -3262,12 +3263,11 @@ Total messages: ${messageCount}
                             <div class="feature">✅ Standard Support</div>
                             <div class="feature">✅ Export Conversations</div>
                         </div>
-                        <button class="plan-btn" onclick="selectPlan('basic')">Choose Basic</button>
+                        <button class="plan-btn featured" onclick="selectPlan('basic')">Choose Basic</button>
                     </div>
 
                     <!-- Professional Plan -->
-                    <div class="plan-card featured" data-plan="professional">
-                        <div class="plan-badge">Most Popular</div>
+                    <div class="plan-card" data-plan="professional">
                         <div class="plan-header">
                             <h3>Professional</h3>
                             <div class="plan-price">$99<span>/month</span></div>
@@ -3280,7 +3280,7 @@ Total messages: ${messageCount}
                             <div class="feature">✅ Priority Support</div>
                             <div class="feature">✅ API Access</div>
                         </div>
-                        <button class="plan-btn featured" onclick="selectPlan('professional')">Choose Professional</button>
+                        <button class="plan-btn" onclick="selectPlan('professional')">Choose Professional</button>
                     </div>
 
                     <!-- Expert Plan -->
@@ -3307,7 +3307,6 @@ Total messages: ${messageCount}
             </div>
         </div>
     </div>
-
     <!-- Low Credits Modal -->
     <div id="low-credits-modal" class="modal">
         <div class="modal-content">
