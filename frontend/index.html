@@ -3121,6 +3121,12 @@ Total messages: ${messageCount}
         }
         
         function selectPlan(planId) {
+    if (planId === 'free') {
+        alert('🎉 Free Plan Activated!\n\nYou now have 1,000 daily credits.\n\nWelcome to PromptLink!');
+        closeUpgradeModal();
+        return;
+    }
+    
     fetch('https://web-production-2816f.up.railway.app/api/payments/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
